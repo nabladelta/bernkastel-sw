@@ -20,8 +20,5 @@ module.exports = {
         extensions: [".tsx", ".ts", ".js"]
     },
     plugins: [
-        new TSLintPlugin({
-            files: ['./src/**/*.ts']
-        })
     ]
 };

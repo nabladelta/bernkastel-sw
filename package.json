@@ -34,6 +34,7 @@
     "webpack-dev-server": "^3.9.0"
   },
   "dependencies": {
+    "@types/orbit-db": "github:reasv/orbit-db-types#master",
     "ipfs": "github:ipfs/js-ipfs#master",
     "orbit-db": "github:orbitdb/orbit-db#master"
   }

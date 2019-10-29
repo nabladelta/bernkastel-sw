@@ -2,9 +2,10 @@
   "name": "bernkastel-sw",
   "version": "0.1.0",
   "description": "Service Worker for Bernkastel",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "start": "webpack-dev-server --mode development",
+    "build": "webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -36,6 +37,7 @@
   "dependencies": {
     "@types/orbit-db": "github:reasv/orbit-db-types#master",
     "ipfs": "github:ipfs/js-ipfs#master",
+    "ipfs-postmsg-proxy": "^3.1.1",
     "orbit-db": "github:orbitdb/orbit-db#master"
   }
 }

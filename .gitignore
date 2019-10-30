@@ -2,6 +2,7 @@ orbitdb/
 dist/
 dist.browser/
 .vscode/
+js/
 # Logs
 logs
 *.log

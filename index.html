@@ -9,8 +9,11 @@
 <body>
 <!--<script src="index.js" type="text/javascript"></script>-->
 <script type="text/javascript">
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/index.js')
+    let worker = new SharedWorker('/index.js')
+    worker.port.start()
+    worker.port.postMessage("QmT78zSuBmuS4z925WZfrqQ1qHaJ56DQaTfyMUF7F8ff5o")
+    worker.port.onmessage = (e)=>{
+        console.log(e.data)
     }
 </script>
 </body>

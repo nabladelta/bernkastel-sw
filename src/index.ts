@@ -2,39 +2,51 @@ const _self: SharedWorker.SharedWorkerGlobalScope = self as any
 import {initIPFS, initOrbit, Thread} from 'bernkastel'
 import IPFS from 'ipfs'
 import OrbitDB from 'orbit-db'
-var threads: {[key: string]: Thread} = {}
+var threads: {[key: string]: Thread} = {} // each thread object contains a database
 var ipfs: IPFS
 var orbit: OrbitDB
+function getAddr(obj: any){
+    return `${obj.root}/${obj.path}`
+}
 _self.onconnect = async e => {
     let port = e.ports[0]
     port.start()
     if (!ipfs) ipfs = await initIPFS({})
     if (!orbit) orbit = await initOrbit(ipfs, {})
-
+    
     port.onmessage = async e => {
+        port.postMessage({id: (await ipfs.id()).id})
         console.log(e.data)
         if (e.data.op === 'open'){
+            var threadAddress = e.data.address
             if (!threads[e.data.address]){
-                var options = {ipfs, orbit, address: undefined}
-                if (e.data.new) options.address = e.data.address
-                threads[e.data.address] = new Thread(options)
-                await threads[e.data.address].ready
+                var options = {ipfs, orbit, address: e.data.address}
+                console.log(options)
+                const thread = new Thread(options)
+                await thread.ready
+                threadAddress = getAddr(thread.db.address)
+                threads[threadAddress] = thread
             }
-            threads[e.data.address].bindOnReplicated((a)=>port.postMessage(threads[e.data.address].posts))
-            port.postMessage(threads[e.data.address].posts)
+            threads[threadAddress].bindOnReplicated((a)=> {
+                port.postMessage({address: threadAddress, update: threads[threadAddress].posts})
+                console.log("replicated")
+            })
+            port.postMessage({ address: threadAddress, update: threads[threadAddress].posts})
         }
         if (e.data.op === 'post'){
+            console.log(e.data.address)
             if (!threads[e.data.address]){
                 port.postMessage({r: false, hash: null})
                 return
             }
             await threads[e.data.address].post({time: Date.now(), message: e.data.message})
-            console.log(threads[e.data.address].db.all)
-            port.postMessage(threads[e.data.address].posts)
+            port.postMessage({address: e.data.address, update: threads[e.data.address].posts})
             return
         }
         if (e.data.op === 'connect'){
+            console.log("connecting")
             await ipfs.swarm.connect(e.data.peer)
+            console.log("connecting complete")
             return
         }
     }

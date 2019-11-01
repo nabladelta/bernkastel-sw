@@ -9,12 +9,55 @@
 <body>
 <!--<script src="index.js" type="text/javascript"></script>-->
 <script type="text/javascript">
-    let worker = new SharedWorker('/index.js')
+    var address = ""
+    let worker = new SharedWorker('/dist/index.js')
     worker.port.start()
-    worker.port.postMessage("QmT78zSuBmuS4z925WZfrqQ1qHaJ56DQaTfyMUF7F8ff5o")
-    worker.port.onmessage = (e)=> {
+    worker.port.onmessage = e => {
         console.log(e.data)
+        if (e.data.id){
+            document.getElementById("ipfsid").innerText = "/p2p-circuit/ipfs/"+e.data.id
+        }
+        if (e.data.update){
+            var update = e.data.update
+            var htmlstring = "<p>"+e.data.address+"</p><br><br>" 
+            for (var i in update){
+                htmlstring = htmlstring + `<p>${new Date(update[i].payload.value.time).toISOString().slice(0, 19).replace('T', ' ')}: ${update[i].payload.value.message}<p>`
+            }
+            address = e.data.address 
+            document.getElementById("thread").innerHTML = htmlstring
+        }
+    }
+    async function post(){
+        console.log("posting")
+        var text = document.getElementById("post").value
+        await worker.port.postMessage({op: 'post', address, "message": text })
+    }
+    async function create(){
+        console.log("creating")
+        await worker.port.postMessage({op: 'open'})
+    }
+    async function openthread(){
+        console.log("opening")
+        address = document.getElementById('addr').value
+        await worker.port.postMessage({op: 'open', address: address})
+    }
+    async function connect(){
+        console.log("connecting")
+        address = document.getElementById('ipfsaddr').value
+        await worker.port.postMessage({op: 'connect', peer: address})
     }
 </script>
+    <p id="ipfsid"></p>
+    <br><br>
+    <input id="ipfsaddr" type="text" name="fname">
+    <button onClick="connect()" type="button">Connect to node</button>
+    <br><br>
+    <button onClick="create()" type="button">Create new thread</button>
+    <input id="addr" type="text" name="fname">
+    <button onClick="openthread()" type="button">Open thread</button>
+    <br><br>
+    <input id="post" type="text" name="fname">
+    <button onClick="post()" type="button">Post</button>
+    <div id="thread">Thread</div>
 </body>
 </html>

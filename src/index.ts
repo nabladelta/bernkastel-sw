@@ -11,8 +11,10 @@ function getAddr(obj: any){
 _self.onconnect = async e => {
     let port = e.ports[0]
     port.start()
-    if (!ipfs) ipfs = await initIPFS({})
-    if (!orbit) orbit = await initOrbit(ipfs, {})
+    if (!ipfs) ipfs = new IPFS({repo: "./orbitdb/default"})
+    // @ts-ignore
+    await ipfs.ready
+    if (!orbit) orbit = await initOrbit(ipfs, { directory: `./orbitdb/default/orbitdb` })
     
     port.onmessage = async e => {
         port.postMessage({id: (await ipfs.id()).id})
@@ -28,19 +30,20 @@ _self.onconnect = async e => {
                 threads[threadAddress] = thread
             }
             threads[threadAddress].bindOnReplicated((a)=> {
-                port.postMessage({address: threadAddress, update: threads[threadAddress].posts})
+                port.postMessage({op: "update", address: threadAddress, update: threads[threadAddress].posts})
                 console.log("replicated")
             })
-            port.postMessage({ address: threadAddress, update: threads[threadAddress].posts})
+            port.postMessage({op: "update", address: threadAddress, update: threads[threadAddress].posts})
         }
         if (e.data.op === 'post'){
             console.log(e.data.address)
             if (!threads[e.data.address]){
-                port.postMessage({r: false, hash: null})
+                port.postMessage({op:'post', r: false, hash: null})
                 return
             }
-            await threads[e.data.address].post({time: Date.now(), message: e.data.message})
-            port.postMessage({address: e.data.address, update: threads[e.data.address].posts})
+            const hash = await threads[e.data.address].post({time: Date.now(), message: e.data.message})
+            port.postMessage({op:'post', r: true, hash})
+            port.postMessage({op: "update", address: e.data.address, update: threads[e.data.address].posts})
             return
         }
         if (e.data.op === 'connect'){

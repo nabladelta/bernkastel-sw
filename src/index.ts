@@ -24,8 +24,9 @@ _self.onconnect = async e => {
         switch (OP) {
             case 'open': {
                 var threadAddress = e.data.address
-                if (!boards[e.data.address]){
-                    var options = {ipfs, orbit, address: e.data.address, ...e.data.options}
+                var setOptions = e.data.options || {}
+                if (!boards[e.data.address]) {
+                    var options = {ipfs, orbit, address: e.data.address, ...setOptions}
                     console.log(options)
                     const thread = new Thread(options)
                     await thread.ready
@@ -66,7 +67,8 @@ _self.onconnect = async e => {
                     port.postMessage({op: OP, hash: null})
                     return
                 }
-                const post = {time: Date.now(), ...e.data.post} as Post
+                const postData = e.data.post || {}
+                const post = {time: Date.now(), ...postData} as Post
                 var hash: string
                 if (OP === 'post') hash = await board.post(post)
                 if (OP === 'delete') hash = await board.deletePost(post.delete)
